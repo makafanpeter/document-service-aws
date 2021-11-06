@@ -1,0 +1,33 @@
+{
+  "name": "document-service-api",
+  "version": "1.0.0",
+  "description": "A microservice for document management on aws infrastructure",
+  "main": "dist/lambda/lambda.js",
+  "scripts": {
+    "transpile": "NODE_ENV=production webpack --progress",
+    "lint": "tslint --project .",
+    "start": "ts-node src/lambda.ts"
+  },
+  "author": "Peter Makafan",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-serverless-express": "^3.3.5",
+    "@types/node": "^16.11.6",
+    "@types/response-time": "^2.3.5",
+    "ts-loader": "^9.2.6",
+    "ts-node": "^10.4.0",
+    "tslint": "^6.1.3",
+    "typescript": "^4.4.4",
+    "webpack": "^5.62.1",
+    "webpack-cli": "^4.9.1"
+  },
+  "dependencies": {
+    "aws-lambda": "^1.0.6",
+    "aws-serverless-express": "^3.4.0",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "http-errors": "^1.8.0",
+    "response-time": "^2.3.2",
+    "winston": "^3.3.3"
+  }
+}
