@@ -1,9 +1,12 @@
 import {Request, Response, NextFunction} from 'express';
 import log from '../utilities/log';
 
-const errorHandler = (err : any, req: Request, res: Response, next: NextFunction) => {
-    log.error(err.stack);
-    res.status(500).send('Something failed!');
+const errorHandler = (err: Error , req: Request, res: Response, _next: NextFunction) => {
+    log.error(err.name);
+    res.status(500).json({
+        "code":"SYSTEM_ERROR",
+        "message": "Unexpected error occurred please try again or confirm current operation status"
+    });
 };
 
 export default errorHandler;

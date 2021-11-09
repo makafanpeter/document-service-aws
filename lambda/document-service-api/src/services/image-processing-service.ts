@@ -13,3 +13,6 @@ class ImageProcessingService {
 
     }
 }
+
+
+export default  ImageProcessingService;
