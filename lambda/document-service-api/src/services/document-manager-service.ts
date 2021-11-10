@@ -3,6 +3,7 @@ import FileEntry from '../models/file-entry'
 import {GetObjectOutput, PutObjectRequest} from "aws-sdk/clients/s3";
 import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
 import SendData = ManagedUpload.SendData;
+import DomainError from "../models/errors/domain-error";
 
 class DocumentManagerService {
 
@@ -12,8 +13,8 @@ class DocumentManagerService {
 
     constructor() {
 
-        this.bucketName = process.env.DEFAULT_BUCKET || "";
-        this.region = process.env.REGION || ""
+        this.bucketName = process.env.DEFAULT_BUCKET as  string;
+        this.region = process.env.REGION as  string
         this.initializeAWS();
     }
 
@@ -44,7 +45,11 @@ class DocumentManagerService {
                 "x-amz-meta-Name":   file.name || ""
             }
         };
-        let result: SendData = await this.s3.upload(params).promise();
+        let result: SendData = await this.s3.upload(params).promise().catch(e => {
+            console.error('Create user failed', e);
+            throw new DomainError("SYSTEM_ERROR", e.message);
+        });
+
         let url = `https://s3.${this.region}.amazonaws.com/${result.Bucket}/${result.Key}`;
         file.fileLocation = file.id;
         file.fileLink = url;

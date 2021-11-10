@@ -1,5 +1,4 @@
 interface FileEntry {
-    id: string
     fileName: string;
     fileLocation: string;
     bucketName: string;
@@ -13,8 +12,11 @@ interface FileEntry {
     encryptionKey: string;
 }
 
+interface  HasKey {
+    id: string
+}
 
-class UploadDocument implements FileEntry{
+class DocumentUpload implements FileEntry, HasKey{
     public bucketName!: string;
     public contentType! : string;
     public description!: string;
@@ -30,4 +32,4 @@ class UploadDocument implements FileEntry{
 }
 
 
-export default UploadDocument;
+export default DocumentUpload;

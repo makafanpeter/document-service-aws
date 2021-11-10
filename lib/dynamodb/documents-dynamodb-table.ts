@@ -6,7 +6,7 @@ import {EnvironmentVariables} from "../document-service-enviroment-props";
 class DocumentsDynamodbTable extends  Table{
 
     public static readonly TABLE_ID = 'DocumentServiceDynamoTable';
-    public static readonly PARTITION_KEY = 'Id';
+    public static readonly PARTITION_KEY = 'id';
 
     constructor(scope: Construct, env: EnvironmentVariables) {
         super(scope, DocumentsDynamodbTable.TABLE_ID, {

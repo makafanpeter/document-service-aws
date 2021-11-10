@@ -14,10 +14,11 @@ export class DocumentServiceAwsStack extends cdk.Stack {
 
 
 
-    const env= new EnvironmentVariables(
-        process.env.TABLE_NAME as string,
-        process.env.DEFAULT_BUCKET as string,
-        process.env.CDK_DEFAULT_REGION as string);
+    const env : EnvironmentVariables= {
+     documentsTable :  process.env.TABLE_NAME as string,
+     bucket:  process.env.DEFAULT_BUCKET as string,
+     region:  process.env.CDK_DEFAULT_REGION as string
+    };
 
     const  s3bucket = new S3Construct(this,env);
     const documentsDynamodbTable = new DocumentsDynamodbTable(this,env);

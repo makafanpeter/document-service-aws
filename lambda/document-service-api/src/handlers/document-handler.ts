@@ -6,12 +6,12 @@ import {validationResult} from 'express-validator';
 import BadRequest from '../models/errors/bad-request'
 import multer, {Multer, StorageEngine} from "multer";
 import DocumentManagerService from "../services/document-manager-service";
-import UploadDocument from "../models/file-entry";
+import DocumentUpload from "../models/file-entry";
 import {v4} from 'uuid';
 import * as crypto from "crypto";
 import Helpers from "../utilities/helpers";
-import DomainError from "../models/errors/domain-error";
-import {rejects} from "assert";
+import {DatabaseManagerService} from "../services/database-manager-service";
+import * as stream from "stream";
 
 class DocumentHandler {
 
@@ -21,6 +21,7 @@ class DocumentHandler {
     private upload: Multer;
     private documentService!: DocumentManagerService;
     private algorithm: string = "aes-256-ctr";
+    private dbService: DatabaseManagerService<DocumentUpload>;
 
     constructor() {
         this.router.use(bodyParser.json());
@@ -28,6 +29,8 @@ class DocumentHandler {
         this.storage = multer.memoryStorage();
         this.upload = multer({storage: this.storage})
         this.documentService = new DocumentManagerService();
+        let tableName =  process.env.DOCUMENTS_TABLE as string;
+        this.dbService = new DatabaseManagerService<DocumentUpload>(tableName);
         this.initRoutes();
     }
 
@@ -39,7 +42,7 @@ class DocumentHandler {
 
     }
 
-    uploadDocument =  (req: Request, res: Response) => {
+    uploadDocument = async  (req: Request, res: Response) => {
         const result = validationResult(req);
         if (!result.isEmpty()) {
             throw new BadRequest(result.array());
@@ -47,7 +50,7 @@ class DocumentHandler {
         let id = v4();
         const file = req.file as Express.Multer.File;
         let buffer = file.buffer
-        let fileEntry = new UploadDocument();
+        let fileEntry = new DocumentUpload();
         fileEntry.id = id
         fileEntry.bucketName = req.body.bucket;
         fileEntry.contentType = file.mimetype;
@@ -66,26 +69,73 @@ class DocumentHandler {
             fileEntry.encrypted = encrypt;
         }
 
-        this.documentService.create(fileEntry, buffer).then(value => {
-            res.status(200).json(fileEntry);
+        await this.documentService.create(fileEntry, buffer).then(value => {
+
         }).catch(reason => {
 
         });
+
+        this.dbService.create(fileEntry).then(_ => {
+            res.status(200).json(fileEntry);
+        })
 
        res.status(500);
 
     }
 
-    downloadDocument = (req: Request, res: Response) => {
-        res.send();
+    downloadDocument = async (req: Request, res: Response) => {
+        let id = req.params.id;
+        let file = await this.dbService.getById(id).catch(reason => {
+            res.status(404).json(reason);
+        });
+
+        let buffer =  await this.documentService.get(file as DocumentUpload).catch(reason => {
+            res.status(500).json(reason);
+        });
+
+        file = file as DocumentUpload;
+        let fileContents = buffer as Buffer;
+
+        if (file.encrypted)
+        {
+            const key = crypto.randomBytes(32);
+            const iv =Buffer.from(file.encryptionKey, 'hex');
+            let decipher = crypto.createDecipheriv(this.algorithm, key, iv);
+            fileContents = Buffer.concat([decipher.update(fileContents) , decipher.final()]);
+        }
+
+        const readStream = new stream.PassThrough();
+        readStream.end(fileContents);
+
+        res.set('Content-disposition', 'attachment; filename=' + file.fileName);
+        res.set('Content-Type', file.contentType);
+
+        readStream.pipe(res);
     }
 
-    deleteDocument = (req: Request, res: Response) => {
-        res.send();
+    deleteDocument = async (req: Request, res: Response) => {
+
+        let id = req.params.id;
+        let file = await this.dbService.getById(id).catch(reason => {
+            res.status(404).json(reason);
+        });
+
+        await this.documentService.delete(file as DocumentUpload).catch(reason => {
+            res.status(500).json(reason);
+        });
+
+        await this.dbService.delete(id).catch(reason => {
+            res.status(404).json(reason);
+        });
+        res.status(200).json(file);
     }
 
-    getDocument = (req: Request, res: Response) => {
-        res.send();
+    getDocument = async (req: Request, res: Response) => {
+        let id = req.params.id;
+        let file = await this.dbService.getById(id).catch(reason => {
+            res.status(404).json(reason);
+        });
+        res.status(200).json(file);
     }
 
 }
