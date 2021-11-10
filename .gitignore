@@ -9,3 +9,4 @@ node_modules
 cdk.out
 .idea
 lambda/document-service-api/dist
+/.env

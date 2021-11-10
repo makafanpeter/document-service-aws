@@ -14,13 +14,12 @@ const app = new App({
         new UtilityHandler(),
     ],
     middleWares: [
+        errorHandler,
         bodyParser.json(),
         bodyParser.urlencoded({ extended: true }),
-        errorHandler,
         allowCors
     ]
 })
-
 app.listen();
 
 export default  app;

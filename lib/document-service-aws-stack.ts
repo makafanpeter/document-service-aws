@@ -1,27 +1,28 @@
 import * as cdk from '@aws-cdk/core';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as apigw from '@aws-cdk/aws-apigateway';
+import DocumentsDynamodbTable from "./dynamodb/documents-dynamodb-table";
+import {LambdaConstruct} from "./lambdas/lambda-construct";
+import {ApiGatewayConstruct} from "./apigateway/apiGateway-construct";
+import {EnvironmentVariables} from "./document-service-enviroment-props";
+import S3Construct from "./s3/s3-construct";
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 export class DocumentServiceAwsStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
-    const document_service = new lambda.Function(this, 'DocumentServiceHandler', {
-      runtime: lambda.Runtime.NODEJS_14_X,    // execution environment
-      code: lambda.Code.fromAsset('lambda/document-service-api/dist/lambda'),  // code loaded from "lambda" directory
-      handler: 'lambda.handler' , // file is "hello", function is "handlers",
-      environment:{
-        REGION : process.env.CDK_DEFAULT_REGION as string,
-        DEFAULT_BUCKET : process.env.DEFAULT_BUCKET as string
-      }
-    });
 
 
+    const env= new EnvironmentVariables(
+        process.env.TABLE_NAME as string,
+        process.env.DEFAULT_BUCKET as string,
+        process.env.CDK_DEFAULT_REGION as string);
 
-    // defines an API Gateway REST API resource backed by our "hello" function.
-    new apigw.LambdaRestApi(this, 'DocumentServiceEndpoint', {
-      handler: document_service
-    });
+    const  s3bucket = new S3Construct(this,env);
+    const documentsDynamodbTable = new DocumentsDynamodbTable(this,env);
+    const lambdaConstruct = new LambdaConstruct(this, documentsDynamodbTable,s3bucket,  env);
+    new ApiGatewayConstruct(this, lambdaConstruct);
+
   }
 }
