@@ -1,5 +1,5 @@
 import {DocumentClient} from "aws-sdk/clients/dynamodb";
-import DomainError from "../models/errors/domain-error";
+import {DomainError, NotFound, SystemError} from "../models/errors/domain-error";
 
 export class DatabaseManagerService<T> {
     private db!: DocumentClient;
@@ -20,8 +20,7 @@ export class DatabaseManagerService<T> {
             Item: document
         };
         await this.db.put(params).promise().catch(e => {
-            console.error('Create user failed', e);
-            throw new DomainError("SYSTEM_ERROR",'Create Failed');
+            throw new DomainError("SYSTEM_ERROR",e.message);
         });
     }
 
@@ -35,7 +34,7 @@ export class DatabaseManagerService<T> {
         if (result && result.Item) {
             return result.Item as T;
         }
-        throw new DomainError("SYSTEM_ERROR",'Create Failed');
+        throw new NotFound(this.tableName, id);
     }
 
 
@@ -50,8 +49,8 @@ export class DatabaseManagerService<T> {
             Item: updatedUser
         };
         await this.db.put(params).promise().catch(e => {
-            console.error('Update user error', e);
-            throw new Error('Update user error');
+
+            throw new SystemError(undefined, e.message);
         });
     }
 
@@ -63,7 +62,7 @@ export class DatabaseManagerService<T> {
         if (result && result.Items) {
             return result.Items.map(i => i as T);
         }
-        throw new DomainError("SYSTEM_ERROR",'Get document error');
+        throw new SystemError("SYSTEM_ERROR",'Get document error');
     }
 
     public async delete(id: string): Promise<void> {
@@ -76,7 +75,7 @@ export class DatabaseManagerService<T> {
         await this.db.delete(params).promise()
             .catch(e => {
                 console.error('Delete user error', e);
-                throw new DomainError("SYSTEM_ERROR",'Delete user error');
+                throw new NotFound(this.tableName,id);
             });
     }
 }

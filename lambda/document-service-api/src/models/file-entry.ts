@@ -31,5 +31,6 @@ class DocumentUpload implements FileEntry, HasKey{
     public encryptionKey!: string;
 }
 
-
 export default DocumentUpload;
+
+

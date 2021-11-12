@@ -2,8 +2,8 @@ import {S3} from 'aws-sdk'
 import FileEntry from '../models/file-entry'
 import {GetObjectOutput, PutObjectRequest} from "aws-sdk/clients/s3";
 import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
+import {DomainError} from "../models/errors/domain-error";
 import SendData = ManagedUpload.SendData;
-import DomainError from "../models/errors/domain-error";
 
 class DocumentManagerService {
 
@@ -12,9 +12,8 @@ class DocumentManagerService {
     private readonly region!: string;
 
     constructor() {
-
         this.bucketName = process.env.DEFAULT_BUCKET as  string;
-        this.region = process.env.REGION as  string
+        this.region = process.env.REGION as  string;
         this.initializeAWS();
     }
 
@@ -46,7 +45,6 @@ class DocumentManagerService {
             }
         };
         let result: SendData = await this.s3.upload(params).promise().catch(e => {
-            console.error('Create user failed', e);
             throw new DomainError("SYSTEM_ERROR", e.message);
         });
 
@@ -63,9 +61,10 @@ class DocumentManagerService {
     get = async (file: FileEntry): Promise<Buffer> => {
         const bucketName = !!file.bucketName ? this.bucketName : file.bucketName;
         const params = {Bucket: bucketName, Key: file.fileLocation};
-        let fileObject: GetObjectOutput = await this.s3.getObject(params).promise();
-        const object = fileObject.Body as Buffer;
-        return Buffer.from(object.toString());
+        let fileObject: GetObjectOutput = await this.s3.getObject(params).promise().catch(e => {
+            throw new DomainError("SYSTEM_ERROR", e.message);
+        });
+        return fileObject.Body as Buffer;
     }
 
     /**
@@ -75,7 +74,9 @@ class DocumentManagerService {
     delete = async (file: FileEntry) => {
         const bucketName = !file.bucketName ? this.bucketName : file.bucketName;
         const params = {Bucket: bucketName, Key: file.fileLocation};
-        await this.s3.deleteObject(params).promise();
+        await this.s3.deleteObject(params).promise().catch(e => {
+            throw new DomainError("SYSTEM_ERROR", e.message);
+        });
     }
 
 }
