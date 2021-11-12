@@ -5,6 +5,8 @@ import app from './server';
 const binaryMimeTypes = [
     'application/json',
     'application/xml',
+    'image/jpeg',
+    'image/png',
 ];
 
 const server = awsServerlessExpress.createServer(app.app, () => null, binaryMimeTypes);

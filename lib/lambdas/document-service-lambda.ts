@@ -1,4 +1,4 @@
-import {Construct} from '@aws-cdk/core';
+import {Construct, Duration} from '@aws-cdk/core';
 import {ManagedPolicy, Role, ServicePrincipal} from '@aws-cdk/aws-iam';
 import {Code, Function, FunctionProps, LayerVersion} from '@aws-cdk/aws-lambda';
 import {defaultFunctionProps} from './default-function-props';
@@ -9,6 +9,7 @@ class DocumentServiceLambda extends Function {
     private static ID: string = "DocumentServiceHandler";
 
     constructor(scope: Construct, environmentVariables : EnvironmentVariables, layer: LayerVersion) {
+        // @ts-ignore
         const functionProps: FunctionProps = {
             ...defaultFunctionProps,
             code: Code.fromAsset("lambda/document-service-api/dist/lambda"),

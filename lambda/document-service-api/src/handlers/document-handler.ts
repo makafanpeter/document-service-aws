@@ -49,7 +49,7 @@ class DocumentHandler {
         }
         let id = v4();
         const file = req.file as Express.Multer.File;
-        let buffer = file.buffer
+        let buffer = Buffer.from(file.buffer);
         let fileEntry = new DocumentUpload();
         fileEntry.id = id
         fileEntry.bucketName = req.body.bucket;
@@ -151,7 +151,6 @@ class DocumentHandler {
         });
         res.status(200).json(file);
     }
-
 }
 
 export default DocumentHandler;

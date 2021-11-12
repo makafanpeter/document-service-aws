@@ -14,7 +14,7 @@ export class BadRequest extends DomainError {
     public errors!: ValidationError[];
 
     constructor(errors: ValidationError[]) {
-        let msg: string[] = errors.map(value => value.msg.toString());
+        let msg: string[] = errors.map(value => `${value.msg.toString()}  ${value.param.toString()}`);
         super("BadRequest", msg.join(','));
         this.errors = errors;
         Object.setPrototypeOf(this, new.target.prototype);

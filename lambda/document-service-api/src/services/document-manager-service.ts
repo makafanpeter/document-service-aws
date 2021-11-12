@@ -4,6 +4,7 @@ import {GetObjectOutput, PutObjectRequest} from "aws-sdk/clients/s3";
 import {ManagedUpload} from "aws-sdk/lib/s3/managed_upload";
 import {DomainError} from "../models/errors/domain-error";
 import SendData = ManagedUpload.SendData;
+import log from "../utilities/log";
 
 class DocumentManagerService {
 
@@ -47,7 +48,7 @@ class DocumentManagerService {
         let result: SendData = await this.s3.upload(params).promise().catch(e => {
             throw new DomainError("SYSTEM_ERROR", e.message);
         });
-
+        log.info("File Upload Successful")
         let url = `https://s3.${this.region}.amazonaws.com/${result.Bucket}/${result.Key}`;
         file.fileLocation = file.id;
         file.fileLink = url;

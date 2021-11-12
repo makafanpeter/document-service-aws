@@ -9,7 +9,7 @@ import {validationResult} from "express-validator";
 import RequestValidator from "../utilities/request-validator";
 import ImageProcessingService from "../services/image-processing-service";
 import {FaceCriteria} from "../models/face-criteria";
-import crypto from "crypto";
+import * as crypto from "crypto";
 
 class UtilityHandler {
 

@@ -5,8 +5,8 @@ class App {
     public port: number
 
     constructor(appInit: { port: number; middleWares: any; controllers: any; }) {
-        this.app = express()
-        this.port = appInit.port
+        this.app = express();
+        this.port = appInit.port;
 
         this.middlewares(appInit.middleWares)
         this.routes(appInit.controllers)
