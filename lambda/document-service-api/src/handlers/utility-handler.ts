@@ -43,9 +43,7 @@ class UtilityHandler {
             return next(error);
         }
 
-        let sourceImageId: string = req.body.sourceImageId;
-        let targetImageId: string = req.body.targetImageId;
-
+        const { sourceImageId, targetImageId } = req.body;
 
         let sourceDocument = await this.dbService.getById(sourceImageId);
 
@@ -83,7 +81,8 @@ class UtilityHandler {
             let error = new BadRequest(validationResults.array());
             return next(error);
         }
-        let  id: string = req.body.id;
+        const {id} = req.body;
+
         let criteria: FaceCriteria = {
             eyeGlasses: req.body.eyeGlasses,
             eyesOpen: req.body.eyesOpen,
