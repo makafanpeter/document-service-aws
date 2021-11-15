@@ -1,4 +1,4 @@
-import {Request, Response, Router} from 'express';
+import {NextFunction, Request, Response, Router} from 'express';
 import requestResponseLogger from '../middlewares/request-response-logger';
 import * as bodyParser from 'body-parser';
 import RequestValidator from "../utilities/request-validator";
@@ -10,7 +10,8 @@ import {v4} from 'uuid';
 import * as crypto from "crypto";
 import Helpers from "../utilities/helpers";
 import {DatabaseManagerService} from "../services/database-manager-service";
-import {BadRequest, NotFound} from '../models/errors/domain-error';
+import {BadRequest} from '../models/errors/domain-error';
+import asyncWrapper from "../middlewares/async-wrapper";
 
 class DocumentHandler {
 
@@ -41,11 +42,11 @@ class DocumentHandler {
 
     }
 
-    uploadDocument = async (req: Request, res: Response) => {
+    uploadDocument =  asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
         const validationResults = validationResult(req);
         if (!validationResults.isEmpty()) {
             let error = new BadRequest(validationResults.array());
-            res.status(400).json(error);
+            return next(error);
         }
         let id = v4();
         const file = req.file as Express.Multer.File;
@@ -69,37 +70,18 @@ class DocumentHandler {
             fileEntry.encrypted = encrypt;
         }
 
-        await this.documentService.create(fileEntry, buffer).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        await this.documentService.create(fileEntry, buffer);
 
-        this.dbService.create(fileEntry).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        })
+        await this.dbService.create(fileEntry);
+
         res.status(200).json(fileEntry);
-    }
+    });
 
-    downloadDocument = async (req: Request, res: Response) => {
-        let id = req.params.id;
-        let file = await this.dbService.getById(id).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+    downloadDocument = asyncWrapper(async (req: Request, res: Response) => {
+        const {id} = req.params;
+        let file = await this.dbService.getById(id);
 
-        let buffer = await this.documentService.get(file as DocumentUpload).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        let buffer = await this.documentService.get(file as DocumentUpload);
 
         file = file as DocumentUpload;
         let fileContents = buffer as Buffer;
@@ -113,44 +95,26 @@ class DocumentHandler {
         res.attachment(file.fileName);
         res.contentType(file.contentType);
         res.send(fileContents);
-    }
+    });
 
-    deleteDocument = async (req: Request, res: Response) => {
+    deleteDocument = asyncWrapper(async (req: Request, res: Response) => {
 
-        let id = req.params.id;
-        let file = await this.dbService.getById(id).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        let {id} = req.params;
 
-        await this.documentService.delete(file as DocumentUpload).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        let file = await this.dbService.getById(id);
 
-        await this.dbService.delete(id).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        await this.documentService.delete(file as DocumentUpload);
+
+        await this.dbService.delete(id);
+
         res.status(201).json();
-    }
+    });
 
-    getDocument = async (req: Request, res: Response) => {
-        let id = req.params.id;
-        let file = await this.dbService.getById(id).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+    getDocument = asyncWrapper(async (req: Request, res: Response) => {
+        const {id} = req.params;
+        let file = await this.dbService.getById(id);
         res.status(200).json(file);
-    }
+    });
 }
 
 export default DocumentHandler;

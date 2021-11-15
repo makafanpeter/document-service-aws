@@ -1,7 +1,7 @@
-import {Request, Response, Router}  from 'express';
+import {NextFunction, Request, Response, Router} from 'express';
 import requestResponseLogger from '../middlewares/request-response-logger';
 import * as bodyParser from 'body-parser';
-import {BadRequest, NotFound} from "../models/errors/domain-error";
+import {BadRequest} from "../models/errors/domain-error";
 import DocumentUpload from "../models/file-entry";
 import {DatabaseManagerService} from "../services/database-manager-service";
 import DocumentManagerService from "../services/document-manager-service";
@@ -10,6 +10,7 @@ import RequestValidator from "../utilities/request-validator";
 import ImageProcessingService from "../services/image-processing-service";
 import {FaceCriteria} from "../models/face-criteria";
 import * as crypto from "crypto";
+import asyncWrapper from "../middlewares/async-wrapper";
 
 class UtilityHandler {
 
@@ -35,30 +36,20 @@ class UtilityHandler {
         this.router.post('/detectFace', RequestValidator.validateDetectFace() ,this.detectFace);
     }
 
-    compareFace = async (req: Request, res: Response) => {
+    compareFace =  asyncWrapper( async (req: Request, res: Response, next: NextFunction) => {
         const validationResults = validationResult(req);
         if (!validationResults.isEmpty()) {
             let error = new BadRequest(validationResults.array());
-            res.status(400).json(error);
+            return next(error);
         }
 
         let sourceImageId: string = req.body.sourceImageId;
         let targetImageId: string = req.body.targetImageId;
 
 
-        let sourceDocument = await this.dbService.getById(sourceImageId).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        let sourceDocument = await this.dbService.getById(sourceImageId);
 
-        let sourceBuffer = await this.documentService.get(sourceDocument as DocumentUpload).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        let sourceBuffer = await this.documentService.get(sourceDocument as DocumentUpload);
 
         sourceDocument = sourceDocument as DocumentUpload;
         sourceBuffer = sourceBuffer as Buffer;
@@ -69,18 +60,8 @@ class UtilityHandler {
             sourceBuffer = Buffer.concat([decipher.update(sourceBuffer), decipher.final()]);
         }
 
-        let targetDocument = await this.dbService.getById(targetImageId).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
-        let targetBuffer = await this.documentService.get(targetDocument as DocumentUpload).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        let targetDocument = await this.dbService.getById(targetImageId);
+        let targetBuffer = await this.documentService.get(targetDocument as DocumentUpload);
         targetDocument = targetDocument as DocumentUpload;
         targetBuffer = targetBuffer as Buffer;
         if (targetDocument.encrypted) {
@@ -90,22 +71,17 @@ class UtilityHandler {
             targetBuffer = Buffer.concat([decipher.update(targetBuffer), decipher.final()]);
         }
 
-        let result = await this.imageProcessingService.compareFace(sourceBuffer, targetBuffer).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        let result = await this.imageProcessingService.compareFace(sourceBuffer, targetBuffer);
+
         res.status(200).json(result);
+    });
 
-    }
 
-
-    detectFace = async (req: Request, res: Response) => {
+    detectFace = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
         const validationResults = validationResult(req);
         if (!validationResults.isEmpty()) {
             let error = new BadRequest(validationResults.array());
-            res.status(400).json(error);
+            return next(error);
         }
         let  id: string = req.body.id;
         let criteria: FaceCriteria = {
@@ -115,19 +91,9 @@ class UtilityHandler {
             sunGlasses: req.body.sunGlasses
         };
 
-        let file = await this.dbService.getById(id).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        let file = await this.dbService.getById(id);
 
-        let buffer = await this.documentService.get(file as DocumentUpload).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        let buffer = await this.documentService.get(file as DocumentUpload);
 
 
         file = file as DocumentUpload;
@@ -140,14 +106,10 @@ class UtilityHandler {
             fileContents = Buffer.concat([decipher.update(fileContents), decipher.final()]);
         }
 
-        let result = await this.imageProcessingService.detectFace(fileContents,criteria).catch(error => {
-            if (error instanceof NotFound) {
-                res.status(404).json(error);
-            }
-            res.status(500).json(error);
-        });
+        let result = await this.imageProcessingService.detectFace(fileContents,criteria);
+
         res.status(200).json(result);
-    }
+    });
 }
 
 export default UtilityHandler;

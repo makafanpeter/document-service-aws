@@ -13,6 +13,8 @@ export class ApiGatewayConstruct extends Construct {
             'application/octet-stream',
             'image/jpeg',
             'image/png',
+            'multipart/form-data',
+            '*/*'
         ];
 
          new apigw.LambdaRestApi(this, ApiGatewayConstruct.ID, {

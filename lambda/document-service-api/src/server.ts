@@ -14,10 +14,10 @@ const app = new App({
         new UtilityHandler(),
     ],
     middleWares: [
-        errorHandler,
         bodyParser.json(),
         bodyParser.urlencoded({ extended: true }),
-        allowCors
+        allowCors,
+        errorHandler
     ]
 })
 app.listen();
