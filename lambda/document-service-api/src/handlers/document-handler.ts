@@ -10,7 +10,7 @@ import {v4} from 'uuid';
 import * as crypto from "crypto";
 import Helpers from "../utilities/helpers";
 import {DatabaseManagerService} from "../services/database-manager-service";
-import {BadRequest} from '../models/errors/domain-error';
+import {BadRequestError, BadInputError} from '../models/errors/domain-error';
 import asyncWrapper from "../middlewares/async-wrapper";
 
 class DocumentHandler {
@@ -45,19 +45,23 @@ class DocumentHandler {
     uploadDocument =  asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
         const validationResults = validationResult(req);
         if (!validationResults.isEmpty()) {
-            let error = new BadRequest(validationResults.array());
+            let error = new BadInputError(validationResults.array());
             return next(error);
         }
-        let id = v4();
+
         const file = req.file as Express.Multer.File;
-        let buffer = Buffer.from(file.buffer);
+        let buffer = Buffer.from(file.buffer.toString("base64"), "base64");
+
+        if (!buffer){
+            let error = new BadRequestError("No File Uploaded");
+            return next(error);
+        }
         let fileEntry = new DocumentUpload();
-        fileEntry.id = id
-        fileEntry.bucketName = req.body.bucket;
+        fileEntry.id = v4()
         fileEntry.contentType = file.mimetype;
         fileEntry.fileName = file.originalname;
+        fileEntry.bucketName = req.body.bucket;
         fileEntry.fileExtension = Helpers.getFileExtension(file.originalname);
-
 
         let encrypt = Boolean(req.body.encrypt);
 
@@ -74,6 +78,7 @@ class DocumentHandler {
 
         await this.dbService.create(fileEntry);
 
+        delete fileEntry.encryptionKey;
         res.status(200).json(fileEntry);
     });
 
@@ -113,6 +118,7 @@ class DocumentHandler {
     getDocument = asyncWrapper(async (req: Request, res: Response) => {
         const {id} = req.params;
         let file = await this.dbService.getById(id);
+        delete file.encryptionKey;
         res.status(200).json(file);
     });
 }

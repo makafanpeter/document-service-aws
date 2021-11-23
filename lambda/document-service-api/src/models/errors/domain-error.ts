@@ -10,9 +10,15 @@ export class DomainError extends Error {
     }
 }
 
-export class BadRequest extends DomainError {
-    public errors!: ValidationError[];
+export class BadRequestError extends DomainError {
+    constructor(message: string) {
+        super("BadRequest", message);
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
 
+export class BadInputError extends  DomainError{
+    public errors!: ValidationError[];
     constructor(errors: ValidationError[]) {
         let msg: string[] = errors.map(value => `${value.msg.toString()}  ${value.param.toString()}`);
         super("BadRequest", msg.join(','));
@@ -20,15 +26,13 @@ export class BadRequest extends DomainError {
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
-
-export class NotFound extends DomainError {
+export class NotFoundError extends DomainError {
     constructor(name: string, key: string) {
         super("Not Found", `Entity ${name} (${key}) was not found.`);
     }
 }
 
 export class SystemError extends DomainError {
-
     constructor(code: string = "SYSTEM_ERROR",
                 message: string = "An Unexpected error occurred please try again or confirm current operation status"
     ) {
