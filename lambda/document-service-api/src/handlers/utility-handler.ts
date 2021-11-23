@@ -1,7 +1,7 @@
 import {NextFunction, Request, Response, Router} from 'express';
 import requestResponseLogger from '../middlewares/request-response-logger';
 import * as bodyParser from 'body-parser';
-import {BadRequest} from "../models/errors/domain-error";
+import {BadInputError} from "../models/errors/domain-error";
 import DocumentUpload from "../models/file-entry";
 import {DatabaseManagerService} from "../services/database-manager-service";
 import DocumentManagerService from "../services/document-manager-service";
@@ -39,7 +39,7 @@ class UtilityHandler {
     compareFace =  asyncWrapper( async (req: Request, res: Response, next: NextFunction) => {
         const validationResults = validationResult(req);
         if (!validationResults.isEmpty()) {
-            let error = new BadRequest(validationResults.array());
+            let error = new BadInputError(validationResults.array());
             return next(error);
         }
 
@@ -78,7 +78,7 @@ class UtilityHandler {
     detectFace = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
         const validationResults = validationResult(req);
         if (!validationResults.isEmpty()) {
-            let error = new BadRequest(validationResults.array());
+            let error = new BadInputError(validationResults.array());
             return next(error);
         }
         const {id} = req.body;
