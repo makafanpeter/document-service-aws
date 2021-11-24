@@ -1,5 +1,5 @@
 import {DocumentClient} from "aws-sdk/clients/dynamodb";
-import {DomainError, NotFound, SystemError} from "../models/errors/domain-error";
+import {DomainError, NotFoundError, SystemError} from "../models/errors/domain-error";
 
 export class DatabaseManagerService<T> {
     private db!: DocumentClient;
@@ -34,7 +34,7 @@ export class DatabaseManagerService<T> {
         if (result && result.Item) {
             return result.Item as T;
         }
-        throw new NotFound(this.tableName, id);
+        throw new NotFoundError(this.tableName, id);
     }
 
 
@@ -75,7 +75,7 @@ export class DatabaseManagerService<T> {
         await this.db.delete(params).promise()
             .catch(e => {
                 console.error('Delete user error', e);
-                throw new NotFound(this.tableName,id);
+                throw new NotFoundError(this.tableName,id);
             });
     }
 }
