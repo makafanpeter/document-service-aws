@@ -16,10 +16,6 @@ class RequestValidator {
 
     static validateUploadDocument = [
         check('name').notEmpty().isString(),
-        check('document').notEmpty(),
-        check('encrypt').isBoolean(),
-        check('bucket').isString(),
-        check('description').isString(),
         RequestValidator.handleValidationErrors,
     ]
 
@@ -27,12 +23,14 @@ class RequestValidator {
     public static validateCompareFace =
         [
             check('sourceImageId').notEmpty().isString(),
-            check('targetImageId').notEmpty().isString()
+            check('targetImageId').notEmpty().isString(),
+            RequestValidator.handleValidationErrors,
         ]
 
 
     static validateDetectFace = [
-        body('id').notEmpty().isString()
+        body('id').notEmpty().isString(),
+        RequestValidator.handleValidationErrors,
     ]
 }
 export default  RequestValidator;

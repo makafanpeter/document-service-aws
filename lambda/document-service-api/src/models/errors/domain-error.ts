@@ -22,7 +22,7 @@ export class BadRequestError extends DomainError {
 export class BadInputError extends  DomainError{
     public errors!: ValidationError[];
     constructor(errors: ValidationError[]) {
-        let msg: string[] = errors.map((error) => `${error.msg}`);
+        let msg: string[] = errors.map((error) => `${error.msg} ${error.param}`);
         super("BadRequest", msg.join(','));
         this.errors = errors;
         Object.setPrototypeOf(this, new.target.prototype);

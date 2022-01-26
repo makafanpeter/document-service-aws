@@ -79,10 +79,10 @@ class UtilityHandler {
         const {id} = req.body;
 
         let criteria: FaceCriteria = {
-            eyeGlasses: req.body.eyeGlasses,
-            eyesOpen: req.body.eyesOpen,
-            mouthOpen: req.body.mouthOpen,
-            sunGlasses: req.body.sunGlasses
+            eyeGlasses: Boolean(req.body.eyeGlasses),
+            eyesOpen: Boolean(req.body.eyesOpen),
+            mouthOpen: Boolean(req.body.mouthOpen),
+            sunGlasses: Boolean(req.body.sunGlasses)
         };
 
         let file = await this.dbService.getById(id);

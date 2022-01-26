@@ -3,6 +3,7 @@ import log from '../utilities/log';
 import {BadInputError, BadRequestError, NotFoundError, ResourceNotFoundError} from "../models/errors/domain-error";
 
 export const notFoundHandler =  (req: Request, _res: Response, next: NextFunction) => {
+    log.info('Invalid request path %s %s', req.method, req.url);
     const err = new ResourceNotFoundError()
     next(err);
 }
@@ -19,7 +20,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
     } else {
         res.status(500).json({
             "code": "SYSTEM_ERROR",
-            "message": "Unexpected error occurred please try again or confirm current operation status"
+            "msg": "Unexpected error occurred please try again or confirm current operation status"
         });
     }
 };

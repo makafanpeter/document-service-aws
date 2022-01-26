@@ -6,7 +6,7 @@ import {
     DetectFacesRequest,
     DetectFacesResponse
 } from "aws-sdk/clients/rekognition";
-import {DomainError} from "../models/errors/domain-error";
+import {BadRequestError, DomainError} from "../models/errors/domain-error";
 
 class ImageProcessingService {
 
@@ -37,23 +37,26 @@ class ImageProcessingService {
         });
 
        let result = false;
+       if (response.FaceDetails != undefined){
+           result = true;
+       }
        response.FaceDetails?.forEach((face) => {
 
            if (faceCriteria.eyeGlasses)
            {
-               result = face.Eyeglasses == faceCriteria.eyeGlasses;
+               result = face.Eyeglasses?.Value == faceCriteria.eyeGlasses;
            }
            if (faceCriteria.eyesOpen)
            {
-               result = face.EyesOpen == faceCriteria.eyesOpen;
+               result = face.EyesOpen?.Value == faceCriteria.eyesOpen;
            }
            if (faceCriteria.mouthOpen)
            {
-               result = face.MouthOpen == faceCriteria.mouthOpen;
+               result = face.MouthOpen?.Value == faceCriteria.mouthOpen;
            }
            if (faceCriteria.sunGlasses)
            {
-               result = face.Sunglasses == faceCriteria.sunGlasses;
+               result = face.Sunglasses?.Value == faceCriteria.sunGlasses;
            }
        });
 
@@ -79,7 +82,11 @@ class ImageProcessingService {
         }
 
         const response: CompareFacesResponse   = await this.rekognition.compareFaces(params).promise().catch(error => {
-            throw new DomainError("SYSTEM_ERROR", error.message);
+           if (error.code ==  "InvalidParameterException"){
+               throw new BadRequestError(error.message);
+           }else{
+               throw new DomainError("SYSTEM_ERROR", error.message);
+           }
         });
 
         if (response.FaceMatches){
