@@ -32,5 +32,13 @@ class RequestValidator {
         body('id').notEmpty().isString(),
         RequestValidator.handleValidationErrors,
     ]
+
+
+    static validateImageResize = [
+        body('id').notEmpty().isString(),
+        body('height').notEmpty().isNumeric(),
+        body('width').notEmpty().isNumeric(),
+        RequestValidator.handleValidationErrors,
+    ]
 }
 export default  RequestValidator;
