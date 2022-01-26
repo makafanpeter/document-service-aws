@@ -9,7 +9,7 @@ interface FileEntry {
     fileExtension: string;
     url: string;
     fileLink: string;
-    encryptionKey: string;
+    encryptionKey?: string;
 }
 
 interface  HasKey {
@@ -28,7 +28,7 @@ class DocumentUpload implements FileEntry, HasKey{
     public id!: string;
     public name!: string;
     public url!: string;
-    public encryptionKey!: string;
+    public encryptionKey?: string;
 }
 
 export default DocumentUpload;

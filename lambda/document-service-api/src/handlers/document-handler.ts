@@ -2,7 +2,6 @@ import {NextFunction, Request, Response, Router} from 'express';
 import requestResponseLogger from '../middlewares/request-response-logger';
 import * as bodyParser from 'body-parser';
 import RequestValidator from "../utilities/request-validator";
-import {validationResult} from 'express-validator';
 import multer, {Multer, StorageEngine} from "multer";
 import DocumentManagerService from "../services/document-manager-service";
 import DocumentUpload from "../models/file-entry";
@@ -10,7 +9,7 @@ import {v4} from 'uuid';
 import * as crypto from "crypto";
 import Helpers from "../utilities/helpers";
 import {DatabaseManagerService} from "../services/database-manager-service";
-import {BadRequestError, BadInputError} from '../models/errors/domain-error';
+import {BadRequestError} from '../models/errors/domain-error';
 import asyncWrapper from "../middlewares/async-wrapper";
 
 class DocumentHandler {
@@ -35,7 +34,7 @@ class DocumentHandler {
     }
 
     private initRoutes() {
-        this.router.post('/', this.upload.single('document'), RequestValidator.validateUploadDocument(), this.uploadDocument);
+        this.router.post('/', this.upload.single('document'), RequestValidator.validateUploadDocument, this.uploadDocument);
         this.router.get('/:id/download', this.downloadDocument);
         this.router.get('/:id', this.getDocument);
         this.router.delete('/:id', this.deleteDocument);
@@ -43,11 +42,6 @@ class DocumentHandler {
     }
 
     uploadDocument =  asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
-        const validationResults = validationResult(req);
-        if (!validationResults.isEmpty()) {
-            let error = new BadInputError(validationResults.array());
-            return next(error);
-        }
 
         const file = req.file as Express.Multer.File;
         let buffer = Buffer.from(file.buffer.toString("base64"), "base64");
@@ -91,9 +85,11 @@ class DocumentHandler {
         file = file as DocumentUpload;
         let fileContents = buffer as Buffer;
 
+        const encryptionKey = String(file.encryptionKey);
+
         if (file.encrypted) {
             const key = crypto.randomBytes(32);
-            const iv = Buffer.from(file.encryptionKey, 'hex');
+            const iv = Buffer.from(encryptionKey, 'hex');
             let decipher = crypto.createDecipheriv(this.algorithm, Buffer.from(key), iv);
             fileContents = Buffer.concat([decipher.update(fileContents), decipher.final()]);
         }

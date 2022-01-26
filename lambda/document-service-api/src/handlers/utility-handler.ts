@@ -1,11 +1,9 @@
-import {NextFunction, Request, Response, Router} from 'express';
+import {Request, Response, Router} from 'express';
 import requestResponseLogger from '../middlewares/request-response-logger';
 import * as bodyParser from 'body-parser';
-import {BadInputError} from "../models/errors/domain-error";
 import DocumentUpload from "../models/file-entry";
 import {DatabaseManagerService} from "../services/database-manager-service";
 import DocumentManagerService from "../services/document-manager-service";
-import {validationResult} from "express-validator";
 import RequestValidator from "../utilities/request-validator";
 import ImageProcessingService from "../services/image-processing-service";
 import {FaceCriteria} from "../models/face-criteria";
@@ -32,16 +30,11 @@ class UtilityHandler {
     }
 
     private initRoutes() {
-        this.router.post('/compareFace',RequestValidator.validateCompareFace(), this.compareFace);
-        this.router.post('/detectFace', RequestValidator.validateDetectFace() ,this.detectFace);
+        this.router.post('/compareFace',RequestValidator.validateCompareFace, this.compareFace);
+        this.router.post('/detectFace', RequestValidator.validateDetectFace ,this.detectFace);
     }
 
-    compareFace =  asyncWrapper( async (req: Request, res: Response, next: NextFunction) => {
-        const validationResults = validationResult(req);
-        if (!validationResults.isEmpty()) {
-            let error = new BadInputError(validationResults.array());
-            return next(error);
-        }
+    compareFace =  asyncWrapper( async (req: Request, res: Response) => {
 
         const { sourceImageId, targetImageId } = req.body;
 
@@ -49,11 +42,14 @@ class UtilityHandler {
 
         let sourceBuffer = await this.documentService.get(sourceDocument as DocumentUpload);
 
+        const sourceEncryptionKey = String(sourceDocument.encryptionKey);
+
+
         sourceDocument = sourceDocument as DocumentUpload;
         sourceBuffer = sourceBuffer as Buffer;
         if (sourceDocument.encrypted) {
             const key = crypto.randomBytes(32);
-            const iv = Buffer.from(sourceDocument.encryptionKey, 'hex');
+            const iv = Buffer.from(sourceEncryptionKey, 'hex');
             let decipher = crypto.createDecipheriv(this.algorithm, Buffer.from(key), iv);
             sourceBuffer = Buffer.concat([decipher.update(sourceBuffer), decipher.final()]);
         }
@@ -62,9 +58,13 @@ class UtilityHandler {
         let targetBuffer = await this.documentService.get(targetDocument as DocumentUpload);
         targetDocument = targetDocument as DocumentUpload;
         targetBuffer = targetBuffer as Buffer;
+
+        const targetEncryptionKey = String(targetDocument.encryptionKey);
+
+
         if (targetDocument.encrypted) {
             const key = crypto.randomBytes(32);
-            const iv = Buffer.from(targetDocument.encryptionKey, 'hex');
+            const iv = Buffer.from(targetEncryptionKey, 'hex');
             let decipher = crypto.createDecipheriv(this.algorithm, Buffer.from(key), iv);
             targetBuffer = Buffer.concat([decipher.update(targetBuffer), decipher.final()]);
         }
@@ -75,12 +75,7 @@ class UtilityHandler {
     });
 
 
-    detectFace = asyncWrapper(async (req: Request, res: Response, next: NextFunction) => {
-        const validationResults = validationResult(req);
-        if (!validationResults.isEmpty()) {
-            let error = new BadInputError(validationResults.array());
-            return next(error);
-        }
+    detectFace = asyncWrapper(async (req: Request, res: Response) => {
         const {id} = req.body;
 
         let criteria: FaceCriteria = {
@@ -98,9 +93,11 @@ class UtilityHandler {
         file = file as DocumentUpload;
         let fileContents = buffer as Buffer;
 
+        const encryptionKey = String(file.encryptionKey);
+
         if (file.encrypted) {
             const key = crypto.randomBytes(32);
-            const iv = Buffer.from(file.encryptionKey, 'hex');
+            const iv = Buffer.from(encryptionKey, 'hex');
             let decipher = crypto.createDecipheriv(this.algorithm, Buffer.from(key), iv);
             fileContents = Buffer.concat([decipher.update(fileContents), decipher.final()]);
         }

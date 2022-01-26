@@ -1,28 +1,38 @@
-import {body, ValidationChain} from 'express-validator';
+import {body, check, validationResult} from 'express-validator';
+import {NextFunction, Response, Request} from "express";
+import {BadInputError} from "../models/errors/domain-error";
 class RequestValidator {
 
 
-    public static validateUploadDocument = (): ValidationChain[] => {
-        return [
-            body('name').notEmpty().isString(),
-            /*body('document').notEmpty(),
-            body('encrypt').isBoolean(),
-            body('bucket').isString(),
-            body('description').isString()*/
-        ]
-    }
+    public static handleValidationErrors = (req: Request, res: Response, next: NextFunction) => {
+        const validationErrors = validationResult(req);
+        if (!validationErrors.isEmpty()) {
+            let error = new BadInputError(validationErrors.array());
+            next(error);
+        }
+        next();
+    };
 
-   public static validateCompareFace= (): ValidationChain[] =>  {
-       return [
-           body('sourceImageId').notEmpty().isString(),
-           body('targetImageId').notEmpty().isString()
-       ]
-    }
 
-    static validateDetectFace= (): ValidationChain[] =>  {
-        return [
-            body('id').notEmpty().isString()
+    static validateUploadDocument = [
+        check('name').notEmpty().isString(),
+        check('document').notEmpty(),
+        check('encrypt').isBoolean(),
+        check('bucket').isString(),
+        check('description').isString(),
+        RequestValidator.handleValidationErrors,
+    ]
+
+
+    public static validateCompareFace =
+        [
+            check('sourceImageId').notEmpty().isString(),
+            check('targetImageId').notEmpty().isString()
         ]
-    }
+
+
+    static validateDetectFace = [
+        body('id').notEmpty().isString()
+    ]
 }
 export default  RequestValidator;
